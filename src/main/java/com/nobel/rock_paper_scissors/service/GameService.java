@@ -1,9 +1,6 @@
 package com.nobel.rock_paper_scissors.service;
 
-import com.nobel.rock_paper_scissors.model.GameResult;
-import com.nobel.rock_paper_scissors.model.Move;
-import com.nobel.rock_paper_scissors.model.PlayRequest;
-import com.nobel.rock_paper_scissors.model.PlayResponse;
+import com.nobel.rock_paper_scissors.model.*;
 
 public interface GameService {
     PlayResponse playGame(PlayRequest request);
@@ -11,4 +8,6 @@ public interface GameService {
     Long startGame();
 
     GameResult finishGame(Long gameId);
+
+    Statistics generateStatistics();
 }

@@ -47,6 +47,11 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    public Statistics generateStatistics() {
+        return gameRepository.getStatistics(authenticationService.getMe());
+    }
+
+    @Override
     public PlayResponse playGame(PlayRequest request) {
         Game game = gameRepository.findById(request.gameId()).get();
 
