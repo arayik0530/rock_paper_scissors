@@ -27,7 +27,7 @@ public class GameController {
 
     @PostMapping("/play")
     public PlayResponse play(@RequestBody PlayRequest request) {
-        return gameService.playGame(request.playerMove());
+        return gameService.playGame(request);
     }
 
     @GetMapping("/get-statistics")

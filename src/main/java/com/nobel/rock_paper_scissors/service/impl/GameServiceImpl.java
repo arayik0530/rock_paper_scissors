@@ -2,10 +2,7 @@ package com.nobel.rock_paper_scissors.service.impl;
 
 import com.nobel.rock_paper_scissors.entity.Game;
 import com.nobel.rock_paper_scissors.entity.Player;
-import com.nobel.rock_paper_scissors.model.GameResult;
-import com.nobel.rock_paper_scissors.model.Move;
-import com.nobel.rock_paper_scissors.model.Outcome;
-import com.nobel.rock_paper_scissors.model.PlayResponse;
+import com.nobel.rock_paper_scissors.model.*;
 import com.nobel.rock_paper_scissors.repository.GameRepository;
 import com.nobel.rock_paper_scissors.repository.PlayerRepository;
 import com.nobel.rock_paper_scissors.service.AuthenticationService;
@@ -13,9 +10,10 @@ import com.nobel.rock_paper_scissors.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+
+import static com.nobel.rock_paper_scissors.model.Move.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +37,7 @@ public class GameServiceImpl implements GameService {
         Optional<Game> byId = gameRepository.findById(gameId);
         if (byId.isPresent()) {
             Game game = byId.get();
-            if(game.getPlayer().getId().equals(authenticationService.getMe())) {
+            if (game.getPlayer().getId().equals(authenticationService.getMe())) {
                 game.setIsFinished(Boolean.TRUE);
                 gameRepository.save(game);
                 return new GameResult(game.getPlayerScore(), game.getComputerScore());
@@ -49,31 +47,65 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public PlayResponse playGame(Move playerMove) {
-        Move computerMove = generateComputerMove(playerMove);
-        Outcome outcome = playerMove.compareMoves(computerMove);
-        saveStatistics(outcome);
+    public PlayResponse playGame(PlayRequest request) {
+        Game game = gameRepository.findById(request.gameId()).get();
 
-        return new PlayResponse(playerMove, computerMove, outcome);
+        if (!game.getIsFinished() && game.getPlayer().getId().equals(authenticationService.getMe())) {
+            Move computerMove = generateComputerMove(request);
+            Outcome outcome = request.playerMove().compareMoves(computerMove);
+
+            Boolean scoreChanged = Boolean.FALSE;
+            if (outcome == Outcome.WIN) {
+                scoreChanged = Boolean.TRUE;
+                game.setPlayerScore(game.getPlayerScore() + 1);
+            } else if (outcome == Outcome.LOSE) {
+                scoreChanged = Boolean.TRUE;
+                game.setComputerScore(game.getComputerScore() + 1);
+            }
+            if (scoreChanged) {
+                gameRepository.save(game);
+            }
+
+            return new PlayResponse(request.playerMove(), computerMove, outcome);
+        }
+
+        throw new RuntimeException("Bad Request");
     }
 
+    /**
+     * Different strategies are used to generate computer move:
+     * 1. if it's the first move then the computer generates random move
+     * 2. Otherwise, 3 strategies are used:
+     * I. Counter the player's last move or
+     * II. Mimic the player's last move or
+     * III. Again, the computer generates random move
+     * These 3 strategies are selected randomly
+     */
+    private Move generateComputerMove(PlayRequest request) {
+        if (request.playerLastMove() != null) {
+            int strategy = random.nextInt(3);
 
-    private Move generateComputerMove(Move playerMove) {
-        List<Move> moves = List.of(Move.ROCK, Move.PAPER, Move.SCISSORS);
-        int playerMoveIndex = moves.indexOf(playerMove);
-        int biasedIndex = (playerMoveIndex + 1 + random.nextInt(moves.size())) % moves.size();
-        return moves.get(biasedIndex);
+            switch (strategy) {
+                case 0 -> {
+                    return switch (request.playerLastMove()) {
+                        case ROCK -> PAPER;
+                        case PAPER -> SCISSORS;
+                        case SCISSORS -> ROCK;
+                    };
+                }
+                case 1 -> {
+                    return request.playerLastMove();
+                }
+                case 2 -> {
+                    return getRandomMove();
+                }
+            }
+        }
+
+        return getRandomMove();
     }
 
-
-    private void saveStatistics(Outcome outcome) {
-//        GameStatistics statistics = statisticsRepository.findById(1L).orElse(new GameStatistics(1, 0, 0, 0));
-////        statistics = switch (outcome) {
-////            case WIN -> new GameStatistics(statistics.getId(), statistics.getTotalGames() + 1, statistics.getPlayerWins() + 1, statistics.getComputerWins(), statistics.getDraws());
-////            case LOSE -> new GameStatistics(statistics.getId(), statistics.getTotalGames() + 1, statistics.getPlayerWins(), statistics.getComputerWins() + 1, statistics.getDraws());
-////            case DRAW -> new GameStatistics(statistics.getId(), statistics.getTotalGames() + 1, statistics.getPlayerWins(), statistics.getComputerWins(), statistics.getDraws() + 1);
-////        };
-//
-//        statisticsRepository.save(statistics);
+    private Move getRandomMove() {
+        return Move.values()[random.nextInt(3)];
     }
 }
