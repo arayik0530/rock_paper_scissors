@@ -15,7 +15,7 @@ public class Game {
     private Long id;
 
     @Column(name = "USER_SCORE", nullable = false)
-    private Integer userScore = 0;
+    private Integer playerScore = 0;
 
     @Column(name = "COMPUTER_SCORE", nullable = false)
     private Integer computerScore = 0;

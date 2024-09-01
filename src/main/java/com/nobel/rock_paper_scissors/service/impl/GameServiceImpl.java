@@ -1,23 +1,51 @@
 package com.nobel.rock_paper_scissors.service.impl;
 
+import com.nobel.rock_paper_scissors.entity.Game;
+import com.nobel.rock_paper_scissors.entity.Player;
+import com.nobel.rock_paper_scissors.model.GameResult;
 import com.nobel.rock_paper_scissors.model.Move;
 import com.nobel.rock_paper_scissors.model.Outcome;
 import com.nobel.rock_paper_scissors.model.PlayResponse;
+import com.nobel.rock_paper_scissors.repository.GameRepository;
+import com.nobel.rock_paper_scissors.repository.PlayerRepository;
+import com.nobel.rock_paper_scissors.service.AuthenticationService;
 import com.nobel.rock_paper_scissors.service.GameService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
 
-    private final Random random;
-//    private final GameStatisticsRepository statisticsRepository;
+    private final Random random = new Random();
+    private final AuthenticationService authenticationService;
+    private final PlayerRepository playerRepository;
+    private final GameRepository gameRepository;
 
-    public GameServiceImpl() {
-        this.random = new Random();
-//        this.statisticsRepository = statisticsRepository;
+    @Override
+    public Long startGame() {
+        Game game = new Game();
+        Player player = playerRepository.findById(authenticationService.getMe()).get();
+        game.setPlayer(player);
+        return gameRepository.save(game).getId();
+    }
+
+    @Override
+    public GameResult finishGame(Long gameId) {
+        Optional<Game> byId = gameRepository.findById(gameId);
+        if (byId.isPresent()) {
+            Game game = byId.get();
+            if(game.getPlayer().getId().equals(authenticationService.getMe())) {
+                game.setIsFinished(Boolean.TRUE);
+                gameRepository.save(game);
+                return new GameResult(game.getPlayerScore(), game.getComputerScore());
+            }
+        }
+        throw new RuntimeException("Game not found");
     }
 
     @Override
@@ -28,6 +56,7 @@ public class GameServiceImpl implements GameService {
 
         return new PlayResponse(playerMove, computerMove, outcome);
     }
+
 
     private Move generateComputerMove(Move playerMove) {
         List<Move> moves = List.of(Move.ROCK, Move.PAPER, Move.SCISSORS);

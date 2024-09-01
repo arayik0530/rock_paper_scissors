@@ -1,20 +1,20 @@
 package com.nobel.rock_paper_scissors.entity;
 
-import com.nobel.rock_paper_scissors.model.PlayerRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "PLAYER")
 @Getter
 @Setter
-public class Player {
+public class Player implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
@@ -29,14 +29,13 @@ public class Player {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "player")
     private List<Game> games = new ArrayList<>();
 
-    @ElementCollection(targetClass = PlayerRole.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "PLAYER_ROLE", joinColumns = @JoinColumn(name = "PLAYER_ID",
-            foreignKey = @ForeignKey(name = "PLAYER_ID_FK",
-                    foreignKeyDefinition = """
-                            foreign key (PLAYER_ID) references PLAYER
-                            on delete cascade
-                            """
-            )))
-    @Enumerated(EnumType.STRING)
-    private Set<PlayerRole> roles = new HashSet<>();
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public String getUsername() {
+        return name;
+    }
 }
