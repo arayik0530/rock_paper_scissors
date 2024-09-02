@@ -4,8 +4,8 @@ package com.nobel.rock_paper_scissors.controller;
 import com.nobel.rock_paper_scissors.model.GameResult;
 import com.nobel.rock_paper_scissors.model.PlayRequest;
 import com.nobel.rock_paper_scissors.model.PlayResponse;
-import com.nobel.rock_paper_scissors.service.GameService;
 import com.nobel.rock_paper_scissors.model.Statistics;
+import com.nobel.rock_paper_scissors.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
